@@ -10,7 +10,7 @@ async fn estimate_gas(
     Json(tx): Json<Transaction>,
     gastimator: Arc<Gastimator>,
 ) -> Result<Json<GasEstimateResponse>> {
-    Gastimator::estimate_gas(gastimator, tx).await.map(Json)
+    gastimator.estimate_gas(tx).await.map(Json)
 }
 
 // Uh... axum needs this. I can probably impl Handler for Gastimator instead.

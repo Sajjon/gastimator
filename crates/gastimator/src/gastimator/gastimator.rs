@@ -43,17 +43,17 @@ impl Gastimator {
 
     /// Estimates the gas usage of `tx` using the local and remote gas estimators.
     ///
-    pub async fn estimate_gas(self_: Arc<Self>, tx: Transaction) -> Result<GasEstimateResponse> {
+    pub async fn estimate_gas(&self, tx: Transaction) -> Result<GasEstimateResponse> {
         let start = Instant::now();
         info!("Received transaction: {:?}", tx);
-        if let Some(response) = Self::check_native_transfer(&tx, start)? {
+        if let Some(response) = self.check_native_transfer(&tx, start)? {
             return Ok(response);
         }
-        if let Some(cached) = Self::use_cached_value_if_able(&self_, &tx, start)? {
+        if let Some(cached) = self.use_cached_value_if_able(&tx, start)? {
             return Ok(cached);
         }
-        let (local, remote) = Self::compute_estimates(&self_, &tx).await?;
-        Self::build_response(&self_, tx, local, remote, start)
+        let (local, remote) = self.compute_estimates(&tx).await?;
+        self.build_response(tx, local, remote, start)
     }
 }
 
@@ -65,14 +65,14 @@ impl Gastimator {
     /// the transaction is considered "cacheable", and if there is a cached
     /// value for it.
     fn use_cached_value_if_able(
-        self_: &Arc<Self>,
+        &self,
         tx: &Transaction,
         start: Instant,
     ) -> Result<Option<GasEstimateResponse>> {
         if !tx.is_cacheable() {
             return Ok(None);
         }
-        if let Some(cached) = self_.state.cache.get(tx) {
+        if let Some(cached) = self.state.cache.get(tx) {
             debug!("Found cached estimate: {:?}", cached.value());
             return Ok(Some(Self::build_response_raw(cached.clone(), start)));
         }
@@ -83,6 +83,7 @@ impl Gastimator {
     /// sufficient. If it is, return the exact gas limit.
     /// If it is not, return a `GasExceedsLimit` error.
     fn check_native_transfer(
+        &self,
         tx: &Transaction,
         start: Instant,
     ) -> Result<Option<GasEstimateResponse>> {
@@ -106,19 +107,16 @@ impl Gastimator {
     }
 
     /// In parallel fetch local and remote gas estimates.
-    async fn compute_estimates(
-        self_: &Arc<Self>,
-        tx: &Transaction,
-    ) -> Result<(Result<Gas>, Result<Gas>)> {
+    async fn compute_estimates(&self, tx: &Transaction) -> Result<(Result<Gas>, Result<Gas>)> {
         // Allows for **parallel execution** of local and remote estimations,
         // which is possible since they are independent.
         let local = tokio::spawn({
-            let estimator = self_.local_gas_estimator();
+            let estimator = self.local_gas_estimator();
             let tx = tx.clone();
             async move { estimator.locally_simulate_tx(&tx) }
         });
         let remote = tokio::spawn({
-            let estimator = self_.remote_gas_estimator();
+            let estimator = self.remote_gas_estimator();
             let tx = tx.clone();
             async move { estimator.estimate_gas(&tx).await }
         });
@@ -129,7 +127,7 @@ impl Gastimator {
     }
 
     fn build_response(
-        self_: &Arc<Self>,
+        &self,
         tx: Transaction,
         local: Result<Gas>,
         remote: Result<Gas>,
@@ -189,7 +187,7 @@ impl Gastimator {
         }
         .map(|resp| {
             if tx.is_cacheable() {
-                self_.state.cache.insert(tx, resp.gas_usage().clone());
+                self.state.cache.insert(tx, resp.gas_usage().clone());
             }
             resp
         })
@@ -268,7 +266,7 @@ mod tests {
     #[tokio::test]
     async fn fail() {
         let sut = Arc::new(Sut::with_dependencies(FailLocal::new(), FailRemote::new()));
-        let res = Sut::estimate_gas(sut, Transaction::default()).await;
+        let res = sut.estimate_gas(Transaction::default()).await;
 
         assert!(res.is_err());
     }
@@ -280,7 +278,9 @@ mod tests {
             LocalTxSimulatorHardCoded::new(local_estimate),
             FailRemote::new(),
         ));
-        let res = Sut::estimate_gas(sut, Transaction::sample_contract_creation()).await;
+        let res = sut
+            .estimate_gas(Transaction::sample_contract_creation())
+            .await;
 
         let expected = &GasUsage::Estimate {
             kind: TransactionKind::ContractCreation,
@@ -296,7 +296,9 @@ mod tests {
             FailLocal::new(),
             RemoteHardcoded::new(remote_estimate),
         ));
-        let res = Sut::estimate_gas(sut, Transaction::sample_contract_creation()).await;
+        let res = sut
+            .estimate_gas(Transaction::sample_contract_creation())
+            .await;
 
         let expected = &GasUsage::Estimate {
             kind: TransactionKind::ContractCreation,
@@ -313,11 +315,9 @@ mod tests {
             FailLocal::new(),
             RemoteHardcoded::new(remote_estimate),
         ));
-        let res = Sut::estimate_gas(
-            sut,
-            Transaction::sample_native_token_transfer_gas_limit(limit),
-        )
-        .await;
+        let res = sut
+            .estimate_gas(Transaction::sample_native_token_transfer_gas_limit(limit))
+            .await;
 
         assert_eq!(
             res,
@@ -336,7 +336,9 @@ mod tests {
             LocalTxSimulatorHardCoded::new(local_estimate),
             RemoteHardcoded::new(remote_estimate),
         ));
-        let res = Sut::estimate_gas(sut, Transaction::sample_contract_creation()).await;
+        let res = sut
+            .estimate_gas(Transaction::sample_contract_creation())
+            .await;
 
         let expected = &GasUsage::EstimateWithRange {
             kind: TransactionKind::ContractCreation,
@@ -355,8 +357,9 @@ mod tests {
             LocalTxSimulatorHardCoded::new(local_estimate),
             RemoteHardcoded::new(remote_estimate),
         ));
-        let res =
-            Sut::estimate_gas(sut, Transaction::sample_contract_creation_gas_limit(limit)).await;
+        let res = sut
+            .estimate_gas(Transaction::sample_contract_creation_gas_limit(limit))
+            .await;
 
         let expected = &GasUsage::EstimateWithRange {
             kind: TransactionKind::ContractCreation,
