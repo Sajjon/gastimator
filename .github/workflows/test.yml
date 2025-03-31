@@ -60,32 +60,6 @@ jobs:
                   default: true
 
             - name: Run rust tests
+              env:
+                ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
               run: cargo test
-
-    # Code Coverage uses Tarpaulin and uploads to CodeCov.io
-    code-coverage:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-
-            - name: Install Rust Toolchain
-              uses: actions-rs/toolchain@v1
-              with:
-                  toolchain: ${{ env.RUST_TOOLCHAIN }}
-                  default: true
-
-            - name: Install cargo tarpaulin
-              uses: actions-rs/install@v0.1
-              with:
-                  crate: cargo-tarpaulin
-                  tag: 0.32.3
-                  locked: true
-
-            - name: Code Coverage - Generate
-              run: cargo tarpaulin --out xml
-
-            - name: Code Coverage - Upload to CodeCov.io
-              uses: codecov/codecov-action@v4
-              with:
-                  token: ${{ secrets.CODECOV_TOKEN }}
-                  fail_ci_if_error: true
