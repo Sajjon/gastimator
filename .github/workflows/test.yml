@@ -61,5 +61,5 @@ jobs:
 
             - name: Run rust tests
               env:
-                ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
-              run: cargo test
+                  ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+              run: cargo test --locked -- --test-threads=1

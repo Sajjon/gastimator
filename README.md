@@ -73,7 +73,7 @@ struct Transaction {
 #### `rlp`
 
 You can find the RLP [by navigating to a TX on `Etherscan`][etherscan] and then clicking
-the list button on the right hand side and then `"Get Raw Tx Hex"`, [see screenshot][.github/etherscan_get_rlp.png]. The pass the value into;
+the list button on the right hand side and then `"Get Raw Tx Hex"`, [see screenshot](.github/etherscan_get_rlp.png). The pass the value into;
 
 ```rust
 struct RawTransaction {
@@ -105,9 +105,9 @@ be a cache miss. I do not cache transaction which lacks either `nonce` or `from`
 
 ## Code Style
 
-The code style uses builder pattern with [`derive_builder` crate][https://crates.io/crates/derive_builder] ensuring code is easy to review on Github (does not rely on
+The code style uses builder pattern with [`derive_builder` crate](https://crates.io/crates/derive_builder) ensuring code is easy to review on Github (does not rely on
 IDE rendered labels, which are omitted from source code) which also performs `Into`
-conversion. Fields are read by reference using [`getset` crate][https://crates.io/crates/getset].
+conversion. Fields are read by reference using [`getset` crate](https://crates.io/crates/getset).
 
 ## Safety & Security
 
