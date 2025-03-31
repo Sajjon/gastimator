@@ -150,7 +150,7 @@ impl Gastimator {
                     "Failed to perform local tx simulation AND failed to fetch remote gas estimate, local err: `{:?}`, remote err: `{:?}`",
                     local_err, remote_err
                 );
-                Err(Error::sink("Failed to get gas estimate"))
+                Err(Error::FailedToCalculateGasEstimate)
             }
             (Err(_), Ok(remote)) => {
                 warn!(
@@ -202,7 +202,7 @@ mod tests {
 
     impl LocalTxSimulator for FailLocal {
         fn locally_simulate_tx(&self, _: &Transaction) -> Result<Gas> {
-            Err(Error::sink("Failed to simulate tx"))
+            Err(Error::LocalSimulationFailed("Hardcoded failure".to_owned()))
         }
     }
 
@@ -228,7 +228,9 @@ mod tests {
     #[async_trait::async_trait]
     impl RemoteGasEstimator for FailRemote {
         async fn estimate_gas(&self, _: &Transaction) -> Result<Gas> {
-            Err(Error::sink("Failed to fetch remote gas estimate"))
+            Err(Error::RemoteGasEstimateFailed(
+                "Hardcoded failure".to_owned(),
+            ))
         }
     }
 
