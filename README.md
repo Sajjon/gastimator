@@ -156,12 +156,12 @@ curl http://0.0.0.0:3000/tx -X POST \
 }'
 ```
 
-> ![NOTE]
+> [!NOTE]
 > Note the different endpoints `/rlp` vs `/tx`
 > Also make sure you use the correct port if you specified another
 > port using `--port` flag.
 
-> ![NOTE]
+> [!NOTE]
 > Note that `value` is in wei, not in full Eth.
 
 #### Gas limit
