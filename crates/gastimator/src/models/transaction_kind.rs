@@ -2,6 +2,8 @@ use derive_more::IsVariant;
 
 use crate::prelude::*;
 
+/// Different classifications of transactions, based on the fields of
+/// [`Transaction`].
 #[derive(Debug, Clone, PartialEq, Eq, Hash, IsVariant, Serialize, Deserialize)]
 pub enum TransactionKind {
     /// Only transfer of native token (ETH)

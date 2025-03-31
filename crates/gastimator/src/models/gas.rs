@@ -1,7 +1,6 @@
 use crate::prelude::*;
 
 /// Amount of gas used by a transaction.
-/// 4.3 billion gas far exceeds the ~40 million block gas limit as of March 2025.
 #[derive(
     Debug,
     Clone,
@@ -20,6 +19,9 @@ use crate::prelude::*;
 #[serde(transparent)]
 pub struct Gas(u64);
 
+// ========================================
+// Public Implementation
+// ========================================
 impl Gas {
     pub const MAX: Self = Self(u64::MAX);
 
@@ -27,6 +29,8 @@ impl Gas {
     pub fn exact_native_token_transfer() -> Self {
         Self(21_000)
     }
+
+    /// Minimum gas usage for a contract creation
     pub fn min_contract_creation() -> Self {
         Self(32_000)
     }
@@ -37,6 +41,8 @@ impl Gas {
         Self(700)
     }
 
+    /// Minimum gas usage for a contract call, depending on
+    /// `with_native_token_transfer` flag.
     pub fn min_contract_call(with_native_token_transfer: bool) -> Self {
         if with_native_token_transfer {
             // Ethereum Yellow Paper, appendix G: Gas Costs, CALL opcode

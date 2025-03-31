@@ -1,8 +1,12 @@
 use crate::prelude::*;
 
+/// A "raw" transaction, with [`RLP`][rlp] encoding.
+///
+/// [rlp]: https://ethereum.org/en/developers/docs/data-structures-and-encoding/rlp/
 #[derive(Debug, Clone, derive_more::Display, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[display("{}", hex::encode(&self.rlp))]
 pub struct RawTransaction {
+    /// The RLP encoded transaction.
     pub rlp: Bytes,
 }
 

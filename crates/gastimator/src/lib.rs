@@ -29,9 +29,12 @@ pub mod prelude {
     };
 
     // EXTERNAL CRATES
+    pub use alloy_consensus::TxEip1559;
+    pub use alloy_primitives::TxKind;
     pub use alloy_primitives::{Address, Bytes, U256};
     pub use derive_builder::Builder;
     pub use derive_more::{Deref, DerefMut};
+    pub use getset::Setters;
     pub use getset::{CopyGetters, Getters};
     pub use log::{debug, error, info, warn};
     pub use reqwest::Client;

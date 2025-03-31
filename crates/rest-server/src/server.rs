@@ -1,5 +1,9 @@
 use crate::prelude::*;
 
+// ========================================
+// Private
+// ========================================
+
 // Uh... axum needs this. I can probably impl Handler for Gastimator instead.
 // but seems not worth it for now.
 async fn estimate_gas_canonical(
@@ -22,6 +26,10 @@ async fn estimate_gas_rlp(
         .await
         .map(Json)
 }
+
+// ========================================
+// Public
+// ========================================
 
 /// Starts the server and signals readiness when the endpoints are live, using
 /// the `ready_tx` channel.

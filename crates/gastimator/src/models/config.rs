@@ -12,6 +12,9 @@ pub struct Config {
     alchemy_api_key: String,
 }
 
+// ========================================
+// Public Implementation
+// ========================================
 impl Config {
     /// Returns the server address and port as a string
     pub fn address_with_port(&self) -> String {

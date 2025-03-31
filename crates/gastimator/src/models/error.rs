@@ -65,6 +65,9 @@ pub enum Error {
     AlchemyParseAsBytes,
 }
 
+// ========================================
+// Public Implementation
+// ========================================
 impl Error {
     pub fn start(e: std::io::Error) -> Self {
         Error::UnableToStartServer {

@@ -8,18 +8,18 @@ pub use gastimator::prelude::*;
     about = "Ethereum Gas Estimator",
     long_about = "Estimates the Gas cost of a transaction on the Ethereum network."
 )]
-pub struct Cli {
+pub(crate) struct Cli {
     /// The address of the server
     #[arg(short = 'a', long = "address", default_value = "0.0.0.0")]
-    pub address: String,
+    pub(crate) address: String,
 
     /// The port our program is running on.
     /// Valid values are 0-65535 (TCP standard range).
     #[arg(short = 'p', long = "port", default_value_t = 3000)]
-    pub port: u16,
+    pub(crate) port: u16,
 
     #[arg(short = 'k', long = "key", default_value = None)]
-    pub alchemy_api_key: Option<String>,
+    pub(crate) alchemy_api_key: Option<String>,
 }
 
 impl From<Cli> for ServerConfig {

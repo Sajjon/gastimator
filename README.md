@@ -1,6 +1,18 @@
 # Assignment
 
-For the instructions, see [ASSIGNMENT.md](ASSIGNMENT.md)
+I've omitted the assignment (recruiter told me to).
+
+# Interpretation of Assignment
+
+I've interpret the assignment such that you care about the amount of gas used
+for a particular Ethereum transaction. Not the amount of Eth paid in fees. So my
+solution is gas price agnostic, meaning it is does not use any [EIP-1559][eip15519]
+fields - `max_priority_fee_per_gas` / `max_fee_per_gas` - as those are not relevant
+for gas usage estimation.
+
+Furthermore I've interpreted the assignemnt such that I'm allowed to use [
+RPC method `eth_estimateGas` with the Alchemy API][alchemy] and that I'm allowed to
+use [`revm`][revm] for estimates too.
 
 # Setup
 
@@ -208,3 +220,4 @@ make help
 [etherscan]: https://etherscan.io/tx/0x6e9710bc55d7498934c22e9accad4c11810f6e86f51e1d6def3d750026cae1ab
 [rlp]: https://ethereum.org/en/developers/docs/data-structures-and-encoding/rlp/
 [dashmap]: https://crates.io/crates/dashmap
+[eip15519]: https://eips.ethereum.org/EIPS/eip-1559
