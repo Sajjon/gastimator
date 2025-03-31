@@ -12,6 +12,7 @@ use revm::{
     interpreter::interpreter::EthInterpreter,
 };
 
+/// A typealias for the type of the EVM we are using.
 #[allow(clippy::upper_case_acronyms)]
 type EVM = Evm<
     Context<BlockEnv, TxEnv, CfgEnv, CacheDB<EmptyDBTyped<Infallible>>>,
@@ -23,10 +24,14 @@ type EVM = Evm<
     EthPrecompiles,
 >;
 
+/// An EVM transaction simulator that can be used to simulate transactions locally.
+/// It uses the `revm` crate to simulate the transaction and returns the gas used.
 pub struct RevmTxSimulator {
     evm: RwLock<EVM>,
 }
 
+/// A simulator of transaction that happens locally.
+/// It is used to simulate transactions locally and returns the gas used.
 pub trait LocalTxSimulator {
     fn locally_simulate_tx(&self, tx: &Transaction) -> Result<Gas>;
 }
@@ -38,14 +43,19 @@ impl From<Transaction> for TxEnv {
             caller: tx.from().unwrap_or_default(),
             kind: *tx.to(),
             data: tx.input().clone(),
-            gas_limit: tx.gas_limit().map(|gas| *gas).unwrap_or_default(),
+            gas_limit: *tx.gas_limit_else_max(),
             value: *tx.value(),
             ..Default::default()
         }
     }
 }
 
+// ========================================
+// Public Implementation
+// ========================================
 impl RevmTxSimulator {
+    /// Constructs an Evm instance using an in-memory database, simulating
+    /// Ethereum mainnet transactions.
     pub fn new() -> Self {
         // Initialise empty in-memory-db
         let cache_db = CacheDB::new(EmptyDB::default());
@@ -54,36 +64,63 @@ impl RevmTxSimulator {
         let evm = Context::mainnet()
             .with_db(cache_db)
             .modify_cfg_chained(|cfg| {
+                // Disable nonce checks, since we might not be providing nonces
                 cfg.disable_nonce_check = true;
+                // Disable balance checks, since we do not wanna have to have balance
+                // to run simulation
                 cfg.disable_balance_check = true; // requires feature flag "optional_balance_check"
             })
             .build_mainnet();
+
         Self {
             evm: RwLock::new(evm),
         }
     }
+}
 
+// ========================================
+// Private Implementation
+// ========================================
+impl RevmTxSimulator {
     fn simulate_tx(evm: &mut EVM, tx: TxEnv) -> Result<Gas> {
+        debug!("Simulating transaction: {tx:?}");
+        // Set the transaction as the current transaction
         evm.modify_tx(|t| *t = tx);
+
+        // Transact the transaction that is set in the context.
         let ResultAndState { result, state: _ } = evm.replay().map_err(|e| match e {
             EVMError::Transaction(InvalidTransaction::CallGasCostMoreThanGasLimit {
                 initial_gas,
                 gas_limit,
-            }) => Error::GasExceedsLimit {
-                estimated_cost: Some(Gas::from(initial_gas)),
-                gas_limit: Gas::from(gas_limit),
-            },
-            _ => Error::sink(e),
+            }) => {
+                // Handle the the case where the gas_limit of the
+                // transaction was less than the required
+                warn!("Gas limit less than required");
+                Error::GasExceedsLimit {
+                    estimated_cost: Some(Gas::from(initial_gas)),
+                    gas_limit: Gas::from(gas_limit),
+                }
+            }
+            _ => Error::local_simulation_failed(e),
         })?;
         Ok(Gas::from(result.gas_used()))
     }
 }
 
+// ========================================
+// LocalTxSimulator Implementation
+// ========================================
 impl LocalTxSimulator for RevmTxSimulator {
     fn locally_simulate_tx(&self, tx: &Transaction) -> Result<Gas> {
-        let mut evm = self.evm.write().map_err(Error::sink)?;
+        let mut evm = self.evm.write().map_err(Error::local_simulation_failed)?;
         let tx = TxEnv::from(tx.clone());
         Self::simulate_tx(&mut evm, tx)
+            .inspect_err(|e| {
+                error!("Error while simulating transaction: {e}");
+            })
+            .inspect(|gas| {
+                debug!("Local simulation - gas used: {gas}");
+            })
     }
 }
 

@@ -6,13 +6,11 @@ use crate::prelude::*;
 
 // Uh... axum needs this. I can probably impl Handler for Gastimator instead.
 // but seems not worth it for now.
-async fn estimate_gas_canonical(
+async fn estimate_gas(
     Json(tx): Json<Transaction>,
     gastimator: Arc<Gastimator>,
 ) -> Result<Json<GasEstimateResponse>> {
-    Gastimator::estimate_gas_canonical(gastimator, tx)
-        .await
-        .map(Json)
+    gastimator.estimate_gas(tx).await.map(Json)
 }
 
 // Uh... axum needs this. I can probably impl Handler for Gastimator instead.
@@ -21,52 +19,56 @@ async fn estimate_gas_rlp(
     Json(tx): Json<RawTransaction>,
     gastimator: Arc<Gastimator>,
 ) -> Result<Json<GasEstimateResponse>> {
-    let tx = Transaction::try_from(tx)?;
-    Gastimator::estimate_gas_canonical(gastimator, tx)
+    estimate_gas(Json(Transaction::try_from(tx)?), gastimator).await
+}
+
+fn init_logging() {
+    pretty_env_logger::init();
+}
+
+fn build_app(gastimator: Arc<Gastimator>) -> Router {
+    Router::new()
+        .route("/tx", {
+            let gastimator = gastimator.clone();
+            post(move |body| estimate_gas(body, gastimator))
+        })
+        .route("/rlp", {
+            let gastimator = gastimator.clone();
+            post(move |body| estimate_gas_rlp(body, gastimator))
+        })
+}
+
+async fn bind_and_signal(
+    address: String,
+    ready_tx: oneshot::Sender<SocketAddr>,
+) -> Result<(tokio::net::TcpListener, SocketAddr)> {
+    let listener = tokio::net::TcpListener::bind(&address)
         .await
-        .map(Json)
+        .map_err(Error::bind)?;
+    let bound_addr = listener.local_addr().map_err(Error::get_bound_address)?;
+    ready_tx
+        .send(bound_addr)
+        .map_err(|_| Error::FailedToSignalReadiness)?;
+    Ok((listener, bound_addr))
 }
 
 // ========================================
 // Public
 // ========================================
 
-/// Starts the server and signals readiness when the endpoints are live, using
-/// the `ready_tx` channel.
+/// Starts the server and signals readiness when the endpoints are live.
 pub async fn run_signaling_readiness(
     config: &Config,
     ready_tx: oneshot::Sender<SocketAddr>,
 ) -> Result<()> {
-    pretty_env_logger::init();
+    init_logging();
     debug!("Starting gastimate server... args: {:?}", config.server());
-
     let gastimator = Arc::new(Gastimator::new(config.alchemy_api_key().clone()));
-
-    // build our application with a single route
-    let app = Router::new()
-        .route("/tx", {
-            let gastimator = gastimator.clone();
-            post(move |body| estimate_gas_canonical(body, gastimator))
-        })
-        .route("/rlp", {
-            let gastimator = gastimator.clone();
-            post(move |body| estimate_gas_rlp(body, gastimator))
-        });
-
-    let address = config.server().address_with_port();
-    let listener = tokio::net::TcpListener::bind(&address)
-        .await
-        .map_err(Error::bind)?;
-
-    let address = listener.local_addr().map_err(Error::get_bound_address)?;
+    let app = build_app(gastimator);
+    let (listener, address) =
+        bind_and_signal(config.server().address_with_port(), ready_tx).await?;
     info!("Listening on: {}", address);
-    // Signal that the server is ready with the bound address
-    ready_tx
-        .send(address)
-        .map_err(|_| Error::FailedToSignalReadiness)?;
-
-    axum::serve(listener, app).await.map_err(Error::start)?;
-    Ok(())
+    axum::serve(listener, app).await.map_err(Error::start)
 }
 
 pub async fn run(config: &Config) {

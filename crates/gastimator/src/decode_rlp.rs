@@ -13,7 +13,7 @@ pub fn decode_eip1559_transaction(raw_tx: impl AsRef<[u8]>) -> Result<TxEip1559,
 
 fn _decode_eip1559_transaction_not_signed(raw_tx: impl AsRef<[u8]>) -> Result<TxEip1559, Error> {
     let mut buf = raw_tx.as_ref();
-    TxEip1559::rlp_decode(&mut buf).map_err(|_| Error::Unknown)
+    TxEip1559::rlp_decode(&mut buf).map_err(Error::decode_rlp_decode_bytes_into_eip1559)
 }
 
 fn _decode_eip1559_transaction_signed(
@@ -23,7 +23,8 @@ fn _decode_eip1559_transaction_signed(
     if buf.starts_with(&[0x02]) {
         buf = &buf[1..];
     }
-    TxEip1559::rlp_decode_signed(&mut buf).map_err(|_| Error::Unknown)
+    TxEip1559::rlp_decode_signed(&mut buf)
+        .map_err(Error::decode_rlp_decode_bytes_into_signed_eip1559)
 }
 
 #[cfg(test)]

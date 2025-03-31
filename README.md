@@ -98,6 +98,19 @@ But I use the `Transaction` in **its entirety** as a cache key, meaning
 if you for example send a similar transaction but other value of `gas_limit` it will
 be a cache miss. I do not cache transaction which lacks either `nonce` or `from`.
 
+## Code Style
+
+The code style uses builder pattern with [`derive_builder` crate][https://crates.io/crates/derive_builder] ensuring code is easy to review on Github (does not rely on
+IDE rendered labels, which are omitted from source code) which also performs `Into`
+conversion. Fields are read by reference using [`getset` crate][https://crates.io/crates/getset].
+
+## Safety & Security
+
+All cargo (supported) commands should be run using `--locked` flag, ensuring that
+the lock file is indeed used, thus protecting us from supply chain attacks.
+
+Secrets are read using [`direnv`](https://direnv.net/) and not put in plaintext (duh!).
+
 # Requirements
 
 > [!IMPORTANT]

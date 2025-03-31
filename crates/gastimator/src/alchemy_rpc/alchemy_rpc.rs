@@ -111,9 +111,10 @@ impl AlchemyRpcClient {
         Res: for<'de> Deserialize<'de>,
     {
         let id = self.id_stepper.next();
+        let method = Req::method();
         let request = RpcRequestBuilder::default()
             .params(params.into_iter().collect::<Vec<Req::Param>>())
-            .method(Req::method())
+            .method(method.clone())
             .id(id)
             .build()
             .unwrap();
@@ -130,11 +131,14 @@ impl AlchemyRpcClient {
             .json(&request)
             .send()
             .await
-            .map_err(|_| Error::AlchemySendRequest)?;
+            .map_err(|_| Error::AlchemySendRequest { method })?;
 
         let status = response.status();
         info!("Alchemy response status: {:?}", status);
-        let body_bytes = response.bytes().await.map_err(Error::sink)?;
+        let body_bytes = response
+            .bytes()
+            .await
+            .map_err(Error::alchemy_read_bytes_of_response)?;
         let body_string = String::from_utf8_lossy(&body_bytes);
 
         // Print the response body as a debug string
@@ -208,7 +212,7 @@ trait TryIntoU64 {
 impl TryIntoU64 for U256 {
     fn try_into_u64(self) -> Result<u64> {
         if self > U256::from(u64::MAX) {
-            return Err(Error::sink("U256 is too big, does not fit in 64 bits"));
+            return Err(Error::UInt256LargerThanU64);
         }
         Ok(self.as_limbs()[0])
     }
@@ -222,7 +226,14 @@ impl TryIntoU64 for U256 {
 impl RemoteGasEstimator for AlchemyRpcClient {
     async fn estimate_gas(&self, tx: &Transaction) -> Result<Gas> {
         let tx = AlchemyEstimateGasInput::from(tx.clone());
-        self.get_gas_estimate(tx).await
+        self.get_gas_estimate(tx)
+            .await
+            .inspect_err(|e| {
+                error!("Error while fetching remote transaction: {e}");
+            })
+            .inspect(|gas| {
+                debug!("Remote estimate - gas used: {gas}");
+            })
     }
 }
 
