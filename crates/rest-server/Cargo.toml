@@ -1,0 +1,19 @@
+[package]
+name = "gastimator-rest"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# INTERNAL CRATES (NONE)
+gastimator.workspace = true
+
+# EXTERNAL CRATES
+axum.workspace = true
+log.workspace = true
+pretty_env_logger.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+hex-literal.workspace = true
+serde_json.workspace = true
+pretty_assertions.workspace = true

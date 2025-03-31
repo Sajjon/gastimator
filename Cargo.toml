@@ -1,0 +1,76 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/gastimator",  # lib
+    "crates/gastimate",   # cli
+    "crates/rest-server", # rest server
+]
+
+# Dependencies used by all/many crates
+[workspace.dependencies]
+# INTERNAL CRATES
+gastimator = { path = "crates/gastimator" }       # lib
+gastimate = { path = "crates/gastimate" }         # cli
+gastimator-rest = { path = "crates/rest-server" } # rest server
+
+# EXTENRAL CRATES (sort lexicographically)
+alloy = { version = "0.13.0", features = [
+    "full",
+    "dyn-abi",
+    "provider-debug-api",
+    "provider-trace-api",
+    "provider-ws",
+] }
+alloy-core = { version = "0.8", features = ["serde"] }
+alloy-primitives = { version = "0.8", features = ["serde"] }
+alloy-consensus = { version = "0.13.0", default-features = false, features = [
+] }
+alloy-rlp = { version = "0.3", default-features = false, features = [] }
+
+async-trait = { version = "0.1.88", default-features = false, features = [] }
+axum = { version = "0.8.1", default-features = false, features = [
+    "json",
+    "macros",
+    "http1",
+    "tokio",
+    "ws",
+] }
+clap = { version = "4.5.32", default-features = false, features = [
+    "std",
+    "help",
+    "derive",
+] }
+# Dashmap is a faster alternative to `RwLock<HashMap<_, _>>`
+dashmap = { version = "6.1.0", default-features = false, features = ["inline"] }
+derive_builder = { version = "0.20.2", default-features = false, features = [
+    "alloc",
+] }
+derive_more = { version = "2.0.1", default-features = false, features = [
+    "full",
+] }
+futures-util = { version = "0.3" } # For WebSocket streams
+getset = { version = "0.1.4", default-features = false, features = [] }
+hex = { version = "0.4.3", default-features = false, features = ["std"] }
+hex-literal = { version = "1.0.0", default-features = false, features = [] }
+log = { version = "0.4.27", default-features = false, features = [] }
+pretty_env_logger = { version = "0.5.0", default-features = false, features = [
+] }
+pretty_assertions = { version = "1.4.1" }
+reqwest = { version = "0.11", features = ["json"] }
+revm = { version = "21.0.0", features = [
+    "optional_balance_check",
+    "alloydb",
+] } # not used `asyncdb` but might be relevant
+serde = { version = "1.0.219", default-features = false, features = ["derive"] }
+serde_json = "*"
+serde_with = { version = "3.12.0", default-features = false, features = [
+    "macros",
+] }
+thiserror = { version = "2.0.12", default-features = false, features = [] }
+tokio = { version = "1.44.1", default-features = false, features = ["full"] }
+
+[profile.release]
+opt-level = 3      # Maximum optimization for speed
+lto = "fat"        # Link Time Optimization ("fat" for best optimization, "thin" for faster compile)
+codegen-units = 1  # Better optimization at the cost of longer compile time
+panic = "abort"    # Removes panic unwinding for smaller and faster binaries

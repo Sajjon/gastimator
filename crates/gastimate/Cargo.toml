@@ -1,0 +1,21 @@
+[package]
+name = "gastimate"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "gastimate"
+path = "src/main.rs"
+
+[dependencies]
+# INTERNAL CRATES
+gastimator.workspace = true
+gastimator-rest.workspace = true
+
+# EXTERNAL CRATES
+
+clap.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+reqwest.workspace = true

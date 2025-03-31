@@ -1,0 +1,33 @@
+[package]
+name = "gastimator"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# INTERNAL CRATES (NONE)
+
+# EXTERNAL CRATES
+alloy.workspace = true
+alloy-primitives.workspace = true
+alloy-rlp.workspace = true
+alloy-consensus.workspace = true
+async-trait.workspace = true
+axum.workspace = true
+dashmap.workspace = true
+derive_builder.workspace = true
+derive_more.workspace = true
+futures-util.workspace = true
+getset.workspace = true
+hex.workspace = true
+hex-literal.workspace = true
+log.workspace = true
+reqwest.workspace = true
+revm.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_with.workspace = true
+thiserror.workspace = true
+
+
+[dev-dependencies]
+pretty_assertions.workspace = true
