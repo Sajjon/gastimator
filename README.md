@@ -1,4 +1,4 @@
-> [!NOTE]
+> [!TIP]
 > I'm happy with the code quality, tooling, testing and documentation of this
 > solution, however, I'm not happy with the precision, or rather lack of, when
 > it comes to estimates. Especially estimating TX making smart contract calls,
@@ -6,10 +6,6 @@
 > only the gas estimate values, but also the code, tooling, testing and doc.
 >
 > Thank you for looking at my solution!
-
-# Assignment
-
-I've omitted the assignment (recruiter told me to).
 
 # Interpretation of Assignment
 
