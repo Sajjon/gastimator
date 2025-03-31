@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 /// Run configuration for the server
-/// requires an `alchemy_api_key` and a [`Route`] config.
+/// requires an `alchemy_api_key` and a [`ServerConfig`] config.
 #[derive(Debug, Clone, Builder, Getters)]
 #[builder(setter(into))]
 pub struct Config {
