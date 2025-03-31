@@ -19,3 +19,6 @@ lint:
 
 format:
 	cargo fmt -- --check
+
+review:
+	cargo insta review

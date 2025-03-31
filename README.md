@@ -127,7 +127,7 @@ curl http://0.0.0.0:3000/rlp -X POST \
 And you should see something like:
 
 ```sh
-{"gas_usage":{"AtLeastWithEstimate":{"kind":{"ContractCall":{"with_native_token_transfer":true}},"at_least":2600,"estimate":147649}},"was_last_response":true,"time_elapsed_in_millis":596}
+{"gas_usage":{"estimate":{"kind":{"contract_call":{"with_native_token_transfer":true}},"gas":147649}},"time_elapsed_in_millis":133}
 ```
 
 where `147649` is the estimated gas usage.

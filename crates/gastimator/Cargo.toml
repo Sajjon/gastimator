@@ -31,3 +31,5 @@ thiserror.workspace = true
 
 [dev-dependencies]
 pretty_assertions.workspace = true
+insta.workspace = true
+tokio.workspace = true # For async tests

@@ -1,0 +1,10 @@
+---
+source: crates/gastimator/src/models/gas_usage.rs
+expression: "&Sut::Estimate\n{ kind: TransactionKind::ContractCreation, gas: Gas::from(54321), }"
+---
+{
+  "estimate": {
+    "kind": "contract_creation",
+    "gas": 54321
+  }
+}

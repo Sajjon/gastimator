@@ -60,30 +60,6 @@ impl Transaction {
         self.nonce().is_some() && self.from().is_some()
     }
 
-    pub fn gas_usage_classification(&self, estimate: impl Into<Option<Gas>>) -> GasUsage {
-        let kind = self.kind();
-        match kind {
-            TransactionKind::NativeTokenTransfer => GasUsage::Exact {
-                kind,
-                exact: Gas::exact_native_token_transfer(),
-            },
-            TransactionKind::ContractCreation => GasUsage::AtLeast {
-                kind,
-                at_least: Gas::min_contract_creation(),
-            },
-            TransactionKind::ContractCall {
-                with_native_token_transfer,
-            } => {
-                let at_least = Gas::min_contract_call(with_native_token_transfer);
-                GasUsage::at_least_with_estimate(kind, at_least, estimate)
-            }
-            TransactionKind::Unknown => {
-                let at_least = Gas::exact_native_token_transfer();
-                GasUsage::at_least_with_estimate(kind, at_least, estimate)
-            }
-        }
-    }
-
     /// Classifies this transaction into a kind, either a pure ETH transfer,
     /// contract creation, contract call or unknown.
     pub fn kind(&self) -> TransactionKind {
@@ -145,5 +121,82 @@ impl TryFrom<RawTransaction> for Transaction {
 impl From<TxEip1559> for Transaction {
     fn from(value: TxEip1559) -> Self {
         Self::from_eip1559(value)
+    }
+}
+
+// ========================================
+// Sample Values (test helpers)
+// ========================================
+
+// this is not the correct flag, we want test only, but `test` flag is not set
+// across crates, and I'm too lazy to add a specific test feature for this...
+#[cfg(debug_assertions)]
+impl Transaction {
+    /// A sample value for a native token transfer transaction, with
+    /// an optional gas limit.
+    ///
+    /// This is used for testing purposes only.
+    pub fn sample_native_token_transfer_gas_limit(limit: impl Into<Option<Gas>>) -> Self {
+        TransactionBuilder::default()
+            .to(Address::from([0x12; 20]))
+            .value(U256::from(1))
+            .gas_limit(limit)
+            .build()
+            .unwrap()
+    }
+
+    /// A sample value for a native token transfer transaction.
+    ///
+    /// This is used for testing purposes only.
+    pub fn sample_native_token_transfer() -> Self {
+        Self::sample_native_token_transfer_gas_limit(None)
+    }
+
+    /// A sample value for a native token transfer transaction,
+    /// which has a nonce and from address.
+    ///
+    /// This is used for testing purposes only.
+    pub fn sample_native_token_transfer_cachable() -> Self {
+        TransactionBuilder::default()
+            .nonce(1)
+            .from(Address::from([0x12; 20]))
+            .value(U256::from(1))
+            .to(Address::from([0x12; 20]))
+            .build()
+            .unwrap()
+    }
+
+    /// A sample value for a contract creation transaction, with
+    /// an optional gas limit.
+    ///
+    /// This is used for testing purposes only.
+    pub fn sample_contract_creation_gas_limit(limit: impl Into<Option<Gas>>) -> Self {
+        TransactionBuilder::default()
+            .to(TxKind::Create)
+            .input(Bytes::from([0xab; 400])) // ERC20 contracts are often around 400 bytes
+            .gas_limit(limit)
+            .build()
+            .unwrap()
+    }
+
+    /// A sample value for a contract creation transaction, with
+    /// an optional gas limit.
+    ///
+    /// This is used for testing purposes only.
+    pub fn sample_contract_creation() -> Self {
+        Self::sample_contract_creation_gas_limit(None)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    type Sut = Transaction;
+
+    #[test]
+    fn is_cachable() {
+        assert!(Sut::sample_native_token_transfer_cachable().is_cacheable());
+        assert!(!Sut::sample_native_token_transfer().is_cacheable());
     }
 }

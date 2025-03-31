@@ -5,6 +5,7 @@ use crate::prelude::*;
 /// Different classifications of transactions, based on the fields of
 /// [`Transaction`].
 #[derive(Debug, Clone, PartialEq, Eq, Hash, IsVariant, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum TransactionKind {
     /// Only transfer of native token (ETH)
     ///

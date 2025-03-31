@@ -100,27 +100,10 @@ impl Tester {
     }
 }
 
-trait NativeTokenTransfer: Sized {
-    fn native_token_transfer_gas_limit(limit: impl Into<Option<Gas>>) -> Self;
-    fn native_token_transfer() -> Self {
-        Self::native_token_transfer_gas_limit(None)
-    }
-}
-impl NativeTokenTransfer for Transaction {
-    fn native_token_transfer_gas_limit(limit: impl Into<Option<Gas>>) -> Self {
-        TransactionBuilder::default()
-            .to(Address::from([0x12; 20]))
-            .value(U256::from(1))
-            .gas_limit(limit)
-            .build()
-            .unwrap()
-    }
-}
-
 #[tokio::test]
 async fn native_token_transfer() {
     // ARRANGE
-    let input = &Transaction::native_token_transfer();
+    let input = &Transaction::sample_native_token_transfer();
     Tester::test(|tester| async move {
         // ACT
         let response = tester.estimate(input).await.unwrap();
@@ -130,7 +113,7 @@ async fn native_token_transfer() {
             *response.gas_usage(),
             GasUsage::Exact {
                 kind: TransactionKind::NativeTokenTransfer,
-                exact: 21_000.into()
+                gas: 21_000.into()
             }
         );
     })
@@ -168,7 +151,7 @@ async fn call_data_limit_too_low() {
 async fn transfer_limit_too_low() {
     // ARRANGE
     let gas_limit = Gas::from(1);
-    let input = &Transaction::native_token_transfer_gas_limit(gas_limit);
+    let input = &Transaction::sample_native_token_transfer_gas_limit(gas_limit);
     Tester::test(|tester| async move {
         // ACT
         let result = tester.estimate(input).await;
@@ -177,6 +160,25 @@ async fn transfer_limit_too_low() {
             "GasExceedsLimit {{ estimated_cost: Some(Gas(21000)), gas_limit: Gas({}) }}",
             gas_limit
         )));
+    })
+    .await;
+}
+
+#[tokio::test]
+async fn GIVEN__cached_response__WHEN__cache_hit__THEN__response_time_is_fast() {
+    // ARRANGE
+    Tester::test(|tester| async move {
+        // ACT
+        let input = &Transaction::sample_native_token_transfer_cachable();
+        let first = tester.estimate(input).await;
+        let second = tester.estimate(input).await;
+
+        let time_first = first.as_ref().unwrap().time_elapsed_in_millis();
+        let time_second = second.as_ref().unwrap().time_elapsed_in_millis();
+
+        // ASSERT
+        // actually Rust is so fast that both times are 0
+        assert!(time_second <= time_first);
     })
     .await;
 }

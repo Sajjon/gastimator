@@ -1,0 +1,11 @@
+---
+source: crates/gastimator/src/models/gas_usage.rs
+expression: "&Sut::EstimateWithRange\n{\n    kind: TransactionKind::ContractCreation, low: Gas::from(43210), high:\n    Gas::from(54321),\n}"
+---
+{
+  "estimate_with_range": {
+    "kind": "contract_creation",
+    "low": 43210,
+    "high": 54321
+  }
+}
