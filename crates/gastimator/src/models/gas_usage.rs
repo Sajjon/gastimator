@@ -3,38 +3,45 @@ use crate::prelude::*;
 use derive_more::IsVariant;
 
 /// Gas usage classification for a transaction.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, IsVariant, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, Hash, IsVariant, Serialize, Deserialize, derive_more::Display,
+)]
+#[serde(rename_all = "snake_case")]
 pub enum GasUsage {
     /// We know exactly the gas usage of the transaction.
+    #[display("exact({gas})")]
     Exact {
         /// Kind of transaction, identified by this software based
         /// on the fields of a `Transaction` value
         kind: TransactionKind,
         /// The **exact** amount of gas used by the transaction.
-        exact: Gas,
+        gas: Gas,
     },
 
-    /// We know the minimum gas usage of the transaction.
-    /// But no estimate for actual gas usage has yet been
-    /// calculated.
-    AtLeast {
+    /// We do not know the exact gas usage of the transaction, but an
+    /// estimate. **It is NOT guaranteed that the actual gas usage is equal
+    /// to this estimate**, it can be higher or lower.
+    #[display("estimate({gas})")]
+    Estimate {
         /// Kind of transaction, identified by this software based
         /// on the fields of a `Transaction` value
         kind: TransactionKind,
-        /// The **minimum** amount of gas used by the transaction.
-        at_least: Gas,
+        /// Estimated gas usage
+        gas: Gas,
     },
 
-    /// We know the minimum gas usage of the transaction,
-    /// with an estimated actual gas usage
-    AtLeastWithEstimate {
+    /// We do not know the exact gas usage of the transaction, but we
+    /// have estimated a value within a range. **It is NOT guaranteed
+    /// that the actual gas usage is inside this range**.
+    #[display("estimate_with_range({low} - {high})")]
+    EstimateWithRange {
         /// Kind of transaction, identified by this software based
         /// on the fields of a `Transaction` value
         kind: TransactionKind,
-        /// The **minimum** amount of gas used by the transaction.
-        at_least: Gas,
-        /// An estimated amount of gas used by the transaction,
-        estimate: Gas,
+        /// Low bound estimate
+        low: Gas,
+        /// High bound estimate
+        high: Gas,
     },
 }
 
@@ -42,40 +49,44 @@ pub enum GasUsage {
 // Public Implementation
 // ========================================
 impl GasUsage {
-    pub fn at_least_with_estimate(
-        kind: TransactionKind,
-        at_least: Gas,
-        estimate: impl Into<Option<Gas>>,
-    ) -> Self {
-        if let Some(estimate) = estimate.into() {
-            Self::AtLeastWithEstimate {
-                kind,
-                at_least,
-                estimate,
-            }
-        } else {
-            Self::AtLeast { kind, at_least }
-        }
-    }
-
-    pub fn with_estimate(self, estimate: Gas) -> Self {
-        match self {
-            Self::Exact { .. } => panic!("Should not have fetched an estimate for Exact"),
-            Self::AtLeast { kind, at_least } => Self::AtLeastWithEstimate {
-                kind,
-                at_least,
-                estimate,
-            },
-            Self::AtLeastWithEstimate { .. } => panic!("Should not re-estimate"),
-        }
-    }
-
     /// Returns the transaction kind
     pub fn transaction_kind(&self) -> &TransactionKind {
         match self {
-            Self::AtLeast { kind, .. } => kind,
-            Self::AtLeastWithEstimate { kind, .. } => kind,
+            Self::Estimate { kind, .. } => kind,
+            Self::EstimateWithRange { kind, .. } => kind,
             Self::Exact { kind, .. } => kind,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    type Sut = GasUsage;
+
+    #[test]
+    fn json_snapshot_exact() {
+        insta::assert_json_snapshot!(&Sut::Exact {
+            kind: TransactionKind::NativeTokenTransfer,
+            gas: Gas::exact_native_token_transfer(),
+        })
+    }
+
+    #[test]
+    fn json_snapshot_estimate() {
+        insta::assert_json_snapshot!(&Sut::Estimate {
+            kind: TransactionKind::ContractCreation,
+            gas: Gas::from(54321),
+        })
+    }
+
+    #[test]
+    fn json_snapshot_estimate_with_range() {
+        insta::assert_json_snapshot!(&Sut::EstimateWithRange {
+            kind: TransactionKind::ContractCreation,
+            low: Gas::from(43210),
+            high: Gas::from(54321),
+        })
     }
 }

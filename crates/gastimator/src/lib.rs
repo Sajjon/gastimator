@@ -21,7 +21,7 @@ pub mod prelude {
     // STD
     pub use std::{
         borrow::Cow,
-        cmp::min,
+        cmp::{max, min},
         collections::HashMap,
         net::SocketAddr,
         sync::{Arc, RwLock},

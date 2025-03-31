@@ -8,7 +8,7 @@ pub struct AppState {
 #[derive(Clone, Debug, Default, Deref, DerefMut)]
 pub struct Cache(dashmap::DashMap<Transaction, GasUsage>);
 
-#[derive(Debug, Clone, Serialize, Deserialize, Builder, Getters)] // deserialize for tests
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Builder, Getters)] // deserialize for tests
 #[builder(setter(into))]
 pub struct GasEstimateResponse {
     /// The gas used by the transaction.

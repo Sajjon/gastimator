@@ -1,0 +1,10 @@
+---
+source: crates/gastimator/src/models/gas_usage.rs
+expression: "&Sut::Exact\n{\n    kind: TransactionKind::NativeTokenTransfer, gas:\n    Gas::exact_native_token_transfer(),\n}"
+---
+{
+  "exact": {
+    "kind": "native_token_transfer",
+    "gas": 21000
+  }
+}
