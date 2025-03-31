@@ -6,13 +6,11 @@ use crate::prelude::*;
 
 // Uh... axum needs this. I can probably impl Handler for Gastimator instead.
 // but seems not worth it for now.
-async fn estimate_gas_canonical(
+async fn estimate_gas(
     Json(tx): Json<Transaction>,
     gastimator: Arc<Gastimator>,
 ) -> Result<Json<GasEstimateResponse>> {
-    Gastimator::estimate_gas_canonical(gastimator, tx)
-        .await
-        .map(Json)
+    Gastimator::estimate_gas(gastimator, tx).await.map(Json)
 }
 
 // Uh... axum needs this. I can probably impl Handler for Gastimator instead.
@@ -21,10 +19,7 @@ async fn estimate_gas_rlp(
     Json(tx): Json<RawTransaction>,
     gastimator: Arc<Gastimator>,
 ) -> Result<Json<GasEstimateResponse>> {
-    let tx = Transaction::try_from(tx)?;
-    Gastimator::estimate_gas_canonical(gastimator, tx)
-        .await
-        .map(Json)
+    estimate_gas(Json(Transaction::try_from(tx)?), gastimator).await
 }
 
 // ========================================
@@ -46,7 +41,7 @@ pub async fn run_signaling_readiness(
     let app = Router::new()
         .route("/tx", {
             let gastimator = gastimator.clone();
-            post(move |body| estimate_gas_canonical(body, gastimator))
+            post(move |body| estimate_gas(body, gastimator))
         })
         .route("/rlp", {
             let gastimator = gastimator.clone();
