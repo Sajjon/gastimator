@@ -73,7 +73,7 @@ struct Transaction {
 #### `rlp`
 
 You can find the RLP [by navigating to a TX on `Etherscan`][etherscan] and then clicking
-the list button on the right hand side and then `"Get Raw Tx Hex"`, [see screenshot](.github/etherscan_get_rlp.png). The pass the value into;
+the list button on the right hand side and then `"Get Raw Tx Hex"`, [see screenshot](.github/etherscan_get_rlp.png). The pass the value into:
 
 ```rust
 struct RawTransaction {
@@ -115,6 +115,11 @@ All cargo (supported) commands should be run using `--locked` flag, ensuring tha
 the lock file is indeed used, thus protecting us from supply chain attacks.
 
 Secrets are read using [`direnv`](https://direnv.net/) and not put in plaintext (duh!).
+
+## Testing
+
+Testing is done with integration tests (see [`integration.rs`](./crates/rest-server/tests/integration.rs)) and unit tests, some unit test use [`insta` crate](https://crates.io/crates/insta) for
+JSON snapshot tests.
 
 # Requirements
 

@@ -22,8 +22,14 @@ async fn estimate_gas_rlp(
     estimate_gas(Json(Transaction::try_from(tx)?), gastimator).await
 }
 
+use std::sync::Once;
+
+static INIT: Once = Once::new();
+
 fn init_logging() {
-    pretty_env_logger::init();
+    INIT.call_once(|| {
+        pretty_env_logger::init();
+    });
 }
 
 fn build_app(gastimator: Arc<Gastimator>) -> Router {
