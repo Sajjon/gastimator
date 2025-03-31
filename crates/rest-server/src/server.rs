@@ -22,23 +22,12 @@ async fn estimate_gas_rlp(
     estimate_gas(Json(Transaction::try_from(tx)?), gastimator).await
 }
 
-// ========================================
-// Public
-// ========================================
-
-/// Starts the server and signals readiness when the endpoints are live, using
-/// the `ready_tx` channel.
-pub async fn run_signaling_readiness(
-    config: &Config,
-    ready_tx: oneshot::Sender<SocketAddr>,
-) -> Result<()> {
+fn init_logging() {
     pretty_env_logger::init();
-    debug!("Starting gastimate server... args: {:?}", config.server());
+}
 
-    let gastimator = Arc::new(Gastimator::new(config.alchemy_api_key().clone()));
-
-    // build our application with a single route
-    let app = Router::new()
+fn build_app(gastimator: Arc<Gastimator>) -> Router {
+    Router::new()
         .route("/tx", {
             let gastimator = gastimator.clone();
             post(move |body| estimate_gas(body, gastimator))
@@ -46,22 +35,40 @@ pub async fn run_signaling_readiness(
         .route("/rlp", {
             let gastimator = gastimator.clone();
             post(move |body| estimate_gas_rlp(body, gastimator))
-        });
+        })
+}
 
-    let address = config.server().address_with_port();
+async fn bind_and_signal(
+    address: String,
+    ready_tx: oneshot::Sender<SocketAddr>,
+) -> Result<(tokio::net::TcpListener, SocketAddr)> {
     let listener = tokio::net::TcpListener::bind(&address)
         .await
         .map_err(Error::bind)?;
-
-    let address = listener.local_addr().map_err(Error::get_bound_address)?;
-    info!("Listening on: {}", address);
-    // Signal that the server is ready with the bound address
+    let bound_addr = listener.local_addr().map_err(Error::get_bound_address)?;
     ready_tx
-        .send(address)
+        .send(bound_addr)
         .map_err(|_| Error::FailedToSignalReadiness)?;
+    Ok((listener, bound_addr))
+}
 
-    axum::serve(listener, app).await.map_err(Error::start)?;
-    Ok(())
+// ========================================
+// Public
+// ========================================
+
+/// Starts the server and signals readiness when the endpoints are live.
+pub async fn run_signaling_readiness(
+    config: &Config,
+    ready_tx: oneshot::Sender<SocketAddr>,
+) -> Result<()> {
+    init_logging();
+    debug!("Starting gastimate server... args: {:?}", config.server());
+    let gastimator = Arc::new(Gastimator::new(config.alchemy_api_key().clone()));
+    let app = build_app(gastimator);
+    let (listener, address) =
+        bind_and_signal(config.server().address_with_port(), ready_tx).await?;
+    info!("Listening on: {}", address);
+    axum::serve(listener, app).await.map_err(Error::start)
 }
 
 pub async fn run(config: &Config) {

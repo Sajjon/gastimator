@@ -52,6 +52,12 @@ pub struct Transaction {
 // Public Implementation
 // ========================================
 impl Transaction {
+    pub fn gas_limit_else_max(&self) -> Gas {
+        // Important we return `Gas::MAX` and not `0`, since that would cause
+        // e.g. local simulation to fail always.
+        self.gas_limit().map(|gas| gas).unwrap_or(Gas::MAX)
+    }
+
     /// We should only try to read from the cache if we have a nonce and from address
     /// otherwise we are not certain that the transaction was
     /// cacheable. If the nonce is the same as the last nonce from

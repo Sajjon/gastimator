@@ -43,7 +43,7 @@ impl From<Transaction> for TxEnv {
             caller: tx.from().unwrap_or_default(),
             kind: *tx.to(),
             data: tx.input().clone(),
-            gas_limit: tx.gas_limit().map(|gas| *gas).unwrap_or_default(),
+            gas_limit: *tx.gas_limit_else_max(),
             value: *tx.value(),
             ..Default::default()
         }
@@ -83,6 +83,7 @@ impl RevmTxSimulator {
 // ========================================
 impl RevmTxSimulator {
     fn simulate_tx(evm: &mut EVM, tx: TxEnv) -> Result<Gas> {
+        debug!("Simulating transaction: {tx:?}");
         // Set the transaction as the current transaction
         evm.modify_tx(|t| *t = tx);
 
@@ -100,10 +101,7 @@ impl RevmTxSimulator {
                     gas_limit: Gas::from(gas_limit),
                 }
             }
-            _ => {
-                error!("Error while simulating transaction: {e}");
-                Error::local_simulation_failed(e)
-            }
+            _ => Error::local_simulation_failed(e),
         })?;
         Ok(Gas::from(result.gas_used()))
     }
@@ -117,6 +115,12 @@ impl LocalTxSimulator for RevmTxSimulator {
         let mut evm = self.evm.write().map_err(Error::local_simulation_failed)?;
         let tx = TxEnv::from(tx.clone());
         Self::simulate_tx(&mut evm, tx)
+            .inspect_err(|e| {
+                error!("Error while simulating transaction: {e}");
+            })
+            .inspect(|gas| {
+                debug!("Local simulation - gas used: {gas}");
+            })
     }
 }
 

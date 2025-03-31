@@ -92,8 +92,8 @@ impl Gastimator {
             return Ok(None);
         }
         let exact = Gas::exact_native_token_transfer();
-        let gas_limit = tx.gas_limit().unwrap_or(Gas::MAX);
-        if gas_limit >= exact {
+        let gas_limit_or_max = tx.gas_limit_else_max();
+        if gas_limit_or_max >= exact {
             Ok(Some(Self::build_response_raw(
                 GasUsage::Exact { kind, gas: exact },
                 start,
@@ -101,7 +101,7 @@ impl Gastimator {
         } else {
             Err(Error::GasExceedsLimit {
                 estimated_cost: Some(exact),
-                gas_limit,
+                gas_limit: gas_limit_or_max,
             })
         }
     }
@@ -133,8 +133,8 @@ impl Gastimator {
         remote: Result<Gas>,
         start: Instant,
     ) -> Result<GasEstimateResponse> {
-        let gas_limit = tx.gas_limit().unwrap_or(Gas::MAX);
-        let dont_exceed_limit = |gas: Gas| min(gas, gas_limit);
+        let gas_limit_or_max = tx.gas_limit_else_max();
+        let dont_exceed_limit = |gas: Gas| min(gas, gas_limit_or_max);
         let kind = tx.kind();
 
         match (local, remote) {

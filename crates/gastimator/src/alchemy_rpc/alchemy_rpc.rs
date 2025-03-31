@@ -226,7 +226,14 @@ impl TryIntoU64 for U256 {
 impl RemoteGasEstimator for AlchemyRpcClient {
     async fn estimate_gas(&self, tx: &Transaction) -> Result<Gas> {
         let tx = AlchemyEstimateGasInput::from(tx.clone());
-        self.get_gas_estimate(tx).await
+        self.get_gas_estimate(tx)
+            .await
+            .inspect_err(|e| {
+                error!("Error while fetching remote transaction: {e}");
+            })
+            .inspect(|gas| {
+                debug!("Remote estimate - gas used: {gas}");
+            })
     }
 }
 

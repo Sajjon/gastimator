@@ -1,6 +1,6 @@
+mod dependencies;
 #[allow(clippy::module_inception)]
 mod gastimator;
-mod dependencies;
 
-pub use gastimator::*;
 pub use dependencies::*;
+pub use gastimator::*;
