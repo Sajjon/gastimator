@@ -149,13 +149,11 @@ async fn erc20_token_transfer_usdc() {
         // ASSERT
         pretty_assertions::assert_eq!(
             *response.gas_usage(),
-            GasUsage::EstimateWithRange {
+            GasUsage::Estimate {
                 kind: TransactionKind::ContractCall {
                     with_native_token_transfer: true
                 },
-                low: 30120.into(),
-                high: 147649.into(),
-                // these are off, real answer is: 62248
+                gas: 30120.into(), //real answer is: 62248
             }
         );
     })
